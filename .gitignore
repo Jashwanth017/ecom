@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+.vscode/
+
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+*.log
+*.class
+*.jar
+*.war
+*.ear
+
+.env
+node_modules/
