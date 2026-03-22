@@ -96,4 +96,21 @@ public class BuyerProfile extends BaseTimeEntity {
         return postalCode;
     }
 
+    public void updateProfile(
+            String fullName,
+            String phone,
+            String addressLine1,
+            String addressLine2,
+            String city,
+            String state,
+            String postalCode
+    ) {
+        this.fullName = fullName;
+        this.phone = phone;
+        this.addressLine1 = addressLine1;
+        this.addressLine2 = addressLine2;
+        this.city = city;
+        this.state = state;
+        this.postalCode = postalCode;
+    }
 }
