@@ -7,9 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
@@ -34,20 +38,9 @@ public class BuyerProfile extends BaseTimeEntity {
     @Column(length = 20)
     private String phone;
 
-    @Column(name = "address_line_1", length = 255)
-    private String addressLine1;
-
-    @Column(name = "address_line_2", length = 255)
-    private String addressLine2;
-
-    @Column(length = 100)
-    private String city;
-
-    @Column(length = 100)
-    private String state;
-
-    @Column(name = "postal_code", length = 20)
-    private String postalCode;
+    @OneToMany(mappedBy = "buyerProfile", fetch = FetchType.LAZY)
+    @OrderBy("createdAt DESC")
+    private List<BuyerAddress> addresses = new ArrayList<>();
 
     protected BuyerProfile() {
     }
@@ -76,41 +69,12 @@ public class BuyerProfile extends BaseTimeEntity {
         return phone;
     }
 
-    public String getAddressLine1() {
-        return addressLine1;
+    public List<BuyerAddress> getAddresses() {
+        return addresses;
     }
 
-    public String getAddressLine2() {
-        return addressLine2;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void updateProfile(
-            String fullName,
-            String phone,
-            String addressLine1,
-            String addressLine2,
-            String city,
-            String state,
-            String postalCode
-    ) {
+    public void updateProfile(String fullName, String phone) {
         this.fullName = fullName;
         this.phone = phone;
-        this.addressLine1 = addressLine1;
-        this.addressLine2 = addressLine2;
-        this.city = city;
-        this.state = state;
-        this.postalCode = postalCode;
     }
 }

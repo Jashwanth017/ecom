@@ -1,11 +1,13 @@
 package com.sample.marketplace.services;
 
 import com.sample.marketplace.dto.seller.CreateProductRequest;
+import com.sample.marketplace.dto.seller.SellerDashboardSummaryResponse;
 import com.sample.marketplace.dto.seller.SellerProductResponse;
 import com.sample.marketplace.dto.seller.SellerProfileResponse;
 import com.sample.marketplace.dto.seller.UpdateProductRequest;
 import com.sample.marketplace.dto.seller.UpdateSellerProfileRequest;
 import com.sample.marketplace.dto.seller.UpdateStockRequest;
+import com.sample.marketplace.dto.catalog.CategoryResponse;
 import com.sample.marketplace.models.Category;
 import com.sample.marketplace.models.Product;
 import com.sample.marketplace.models.SellerProfile;
@@ -13,6 +15,7 @@ import com.sample.marketplace.models.enums.ProductStatus;
 import com.sample.marketplace.models.enums.Role;
 import com.sample.marketplace.models.enums.SellerApprovalStatus;
 import com.sample.marketplace.repositories.CategoryRepository;
+import com.sample.marketplace.repositories.OrderItemRepository;
 import com.sample.marketplace.repositories.ProductRepository;
 import com.sample.marketplace.repositories.SellerProfileRepository;
 import com.sample.marketplace.security.AuthenticatedUser;
@@ -28,15 +31,29 @@ public class SellerCatalogService {
     private final SellerProfileRepository sellerProfileRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final OrderItemRepository orderItemRepository;
 
     public SellerCatalogService(
             SellerProfileRepository sellerProfileRepository,
             CategoryRepository categoryRepository,
-            ProductRepository productRepository
+            ProductRepository productRepository,
+            OrderItemRepository orderItemRepository
     ) {
         this.sellerProfileRepository = sellerProfileRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.orderItemRepository = orderItemRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public SellerDashboardSummaryResponse getDashboardSummary(AuthenticatedUser authenticatedUser) {
+        getSellerProfileEntity(authenticatedUser);
+        long userId = authenticatedUser.getId();
+        return new SellerDashboardSummaryResponse(
+                orderItemRepository.countDistinctOrdersBySellerUserId(userId),
+                productRepository.countBySellerUserId(userId),
+                orderItemRepository.sumLineTotalBySellerUserId(userId)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +99,14 @@ public class SellerCatalogService {
         SellerProfile sellerProfile = getSellerProfileEntity(authenticatedUser);
         return productRepository.findAllBySellerId(sellerProfile.getId()).stream()
                 .map(this::toSellerProductResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getUsedCategories(AuthenticatedUser authenticatedUser) {
+        getSellerProfileEntity(authenticatedUser);
+        return productRepository.findDistinctCategoriesBySellerUserId(authenticatedUser.getId()).stream()
+                .map(this::toCategoryResponse)
                 .toList();
     }
 
@@ -249,5 +274,13 @@ public class SellerCatalogService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private CategoryResponse toCategoryResponse(Category category) {
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getSlug()
+        );
     }
 }

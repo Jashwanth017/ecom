@@ -1,11 +1,13 @@
 package com.sample.marketplace.controllers;
 
 import com.sample.marketplace.dto.seller.CreateProductRequest;
+import com.sample.marketplace.dto.seller.SellerDashboardSummaryResponse;
 import com.sample.marketplace.dto.seller.SellerProductResponse;
 import com.sample.marketplace.dto.seller.SellerProfileResponse;
 import com.sample.marketplace.dto.seller.UpdateProductRequest;
 import com.sample.marketplace.dto.seller.UpdateSellerProfileRequest;
 import com.sample.marketplace.dto.seller.UpdateStockRequest;
+import com.sample.marketplace.dto.catalog.CategoryResponse;
 import com.sample.marketplace.security.AuthenticatedUser;
 import com.sample.marketplace.services.SellerCatalogService;
 import jakarta.validation.Valid;
@@ -28,6 +30,13 @@ public class SellerController {
 
     public SellerController(SellerCatalogService sellerCatalogService) {
         this.sellerCatalogService = sellerCatalogService;
+    }
+
+    @GetMapping("/dashboard/summary")
+    public SellerDashboardSummaryResponse getDashboardSummary(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        return sellerCatalogService.getDashboardSummary(authenticatedUser);
     }
 
     @GetMapping("/profile")
@@ -54,6 +63,11 @@ public class SellerController {
     @GetMapping("/products")
     public List<SellerProductResponse> getOwnProducts(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
         return sellerCatalogService.getOwnProducts(authenticatedUser);
+    }
+
+    @GetMapping("/categories/used")
+    public List<CategoryResponse> getUsedCategories(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        return sellerCatalogService.getUsedCategories(authenticatedUser);
     }
 
     @GetMapping("/products/{productId}")

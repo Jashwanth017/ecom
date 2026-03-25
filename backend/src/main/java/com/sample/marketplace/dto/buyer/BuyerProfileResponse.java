@@ -6,10 +6,6 @@ public record BuyerProfileResponse(
         String email,
         String fullName,
         String phone,
-        String addressLine1,
-        String addressLine2,
-        String city,
-        String state,
-        String postalCode
+        java.util.List<BuyerAddressResponse> addresses
 ) {
 }

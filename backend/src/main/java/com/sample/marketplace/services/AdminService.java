@@ -1,16 +1,21 @@
 package com.sample.marketplace.services;
 
+import com.sample.marketplace.dto.admin.CreateCategoryRequest;
 import com.sample.marketplace.dto.admin.AdminDashboardSummaryResponse;
 import com.sample.marketplace.dto.admin.AdminUserResponse;
 import com.sample.marketplace.models.SellerProfile;
 import com.sample.marketplace.models.User;
+import com.sample.marketplace.models.Category;
+import com.sample.marketplace.dto.catalog.CategoryResponse;
 import com.sample.marketplace.models.enums.Role;
 import com.sample.marketplace.models.enums.SellerApprovalStatus;
 import com.sample.marketplace.models.enums.UserStatus;
+import com.sample.marketplace.repositories.CategoryRepository;
 import com.sample.marketplace.repositories.SellerProfileRepository;
 import com.sample.marketplace.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +25,16 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final SellerProfileRepository sellerProfileRepository;
+    private final CategoryRepository categoryRepository;
 
     public AdminService(
             UserRepository userRepository,
-            SellerProfileRepository sellerProfileRepository
+            SellerProfileRepository sellerProfileRepository,
+            CategoryRepository categoryRepository
     ) {
         this.userRepository = userRepository;
         this.sellerProfileRepository = sellerProfileRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -88,6 +96,28 @@ public class AdminService {
         return toAdminUserResponse(sellerProfile.getUser(), sellerProfileRepository.save(sellerProfile));
     }
 
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getCategories() {
+        return categoryRepository.findAllByOrderByNameAsc().stream()
+                .map(this::toCategoryResponse)
+                .toList();
+    }
+
+    public CategoryResponse createCategory(CreateCategoryRequest request) {
+        String normalizedName = request.name().trim();
+        String slug = normalizeSlug(request.slug(), normalizedName);
+
+        if (categoryRepository.existsByNameIgnoreCase(normalizedName)) {
+            throw new IllegalArgumentException("Category name already exists");
+        }
+        if (categoryRepository.existsBySlug(slug)) {
+            throw new IllegalArgumentException("Category slug already exists");
+        }
+
+        Category category = categoryRepository.save(Category.create(normalizedName, slug));
+        return toCategoryResponse(category);
+    }
+
     private List<User> findUsers(Role role, UserStatus status) {
         if (role != null && status != null) {
             return userRepository.findAllByRoleAndStatus(role, status);
@@ -147,5 +177,20 @@ public class AdminService {
         }
         String trimmed = reason.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private CategoryResponse toCategoryResponse(Category category) {
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getSlug()
+        );
+    }
+
+    private String normalizeSlug(String requestedSlug, String name) {
+        String source = requestedSlug == null || requestedSlug.isBlank() ? name : requestedSlug.trim();
+        return source.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
     }
 }

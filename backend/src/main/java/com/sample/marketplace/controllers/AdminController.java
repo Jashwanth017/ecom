@@ -2,7 +2,9 @@ package com.sample.marketplace.controllers;
 
 import com.sample.marketplace.dto.admin.AdminDashboardSummaryResponse;
 import com.sample.marketplace.dto.admin.AdminUserResponse;
+import com.sample.marketplace.dto.admin.CreateCategoryRequest;
 import com.sample.marketplace.dto.admin.SellerApprovalActionRequest;
+import com.sample.marketplace.dto.catalog.CategoryResponse;
 import com.sample.marketplace.models.enums.Role;
 import com.sample.marketplace.models.enums.UserStatus;
 import com.sample.marketplace.services.AdminService;
@@ -11,6 +13,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -70,5 +73,15 @@ public class AdminController {
             @Valid @RequestBody(required = false) SellerApprovalActionRequest request
     ) {
         return adminService.rejectSeller(sellerProfileId, request == null ? null : request.reason());
+    }
+
+    @GetMapping("/categories")
+    public List<CategoryResponse> getCategories() {
+        return adminService.getCategories();
+    }
+
+    @PostMapping("/categories")
+    public CategoryResponse createCategory(@Valid @RequestBody CreateCategoryRequest request) {
+        return adminService.createCategory(request);
     }
 }
