@@ -7,6 +7,7 @@ import java.time.Instant;
 
 public record AdminUserResponse(
         Long userId,
+        Long sellerProfileId,
         String email,
         Role role,
         UserStatus status,

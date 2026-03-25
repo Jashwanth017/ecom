@@ -150,6 +150,7 @@ public class AdminService {
 
         return new AdminUserResponse(
                 user.getId(),
+                null,
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),
@@ -162,6 +163,7 @@ public class AdminService {
     private AdminUserResponse toAdminUserResponse(User user, SellerProfile sellerProfile) {
         return new AdminUserResponse(
                 user.getId(),
+                sellerProfile == null ? null : sellerProfile.getId(),
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),

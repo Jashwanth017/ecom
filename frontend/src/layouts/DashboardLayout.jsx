@@ -5,6 +5,7 @@ const sectionLinks = {
   "/seller": [
     { to: "/seller/dashboard", label: "Dashboard" },
     { to: "/seller/products", label: "Products" },
+    { to: "/seller/categories", label: "Categories" },
     { to: "/seller/orders", label: "Orders" },
     { to: "/seller/profile", label: "Profile" }
   ],

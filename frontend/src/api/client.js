@@ -80,6 +80,82 @@ export const apiClient = {
     });
   },
 
+  getAdminDashboardSummary(accessToken) {
+    return request("/admin/dashboard/summary", {
+      token: accessToken
+    });
+  },
+
+  getAdminUsers(accessToken, filters = {}) {
+    const search = new URLSearchParams();
+    if (filters.role) {
+      search.set("role", filters.role);
+    }
+    if (filters.status) {
+      search.set("status", filters.status);
+    }
+
+    const suffix = search.toString() ? `?${search}` : "";
+    return request(`/admin/users${suffix}`, {
+      token: accessToken
+    });
+  },
+
+  getAdminUser(accessToken, userId) {
+    return request(`/admin/users/${userId}`, {
+      token: accessToken
+    });
+  },
+
+  banAdminUser(accessToken, userId) {
+    return request(`/admin/users/${userId}/ban`, {
+      method: "PATCH",
+      token: accessToken
+    });
+  },
+
+  unbanAdminUser(accessToken, userId) {
+    return request(`/admin/users/${userId}/unban`, {
+      method: "PATCH",
+      token: accessToken
+    });
+  },
+
+  getPendingSellerApprovals(accessToken) {
+    return request("/admin/sellers/pending", {
+      token: accessToken
+    });
+  },
+
+  approveSeller(accessToken, sellerProfileId) {
+    return request(`/admin/sellers/${sellerProfileId}/approve`, {
+      method: "PATCH",
+      token: accessToken
+    });
+  },
+
+  rejectSeller(accessToken, sellerProfileId, reason) {
+    return request(`/admin/sellers/${sellerProfileId}/reject`, {
+      method: "PATCH",
+      body: { reason },
+      token: accessToken
+    });
+  },
+
+  getAdminCategories(accessToken) {
+    return request("/admin/categories", {
+      token: accessToken
+    });
+  },
+
+  createAdminCategory(accessToken, data) {
+    return request("/admin/categories", {
+      method: "POST",
+      body: data,
+      token: accessToken
+    });
+  },
+
   getSellerProfile(accessToken) {
     return request("/seller/profile", {
       token: accessToken
@@ -96,6 +172,12 @@ export const apiClient = {
 
   getSellerProducts(accessToken) {
     return request("/seller/products", {
+      token: accessToken
+    });
+  },
+
+  getSellerUsedCategories(accessToken) {
+    return request("/seller/categories/used", {
       token: accessToken
     });
   },

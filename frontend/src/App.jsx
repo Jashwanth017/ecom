@@ -2,9 +2,14 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminSellerApprovalsPage from "./pages/AdminSellerApprovalsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import SellerCategoriesPage from "./pages/SellerCategoriesPage";
 import SellerDashboardPage from "./pages/SellerDashboardPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
 import SellerProductsPage from "./pages/SellerProductsPage";
@@ -35,6 +40,7 @@ function App() {
         <Route path="/seller" element={<DashboardLayout areaName="Seller Dashboard" />}>
           <Route path="dashboard" element={<SellerDashboardPage />} />
           <Route path="products" element={<SellerProductsPage />} />
+          <Route path="categories" element={<SellerCategoriesPage />} />
           <Route path="profile" element={<SellerProfilePage />} />
           <Route path="orders" element={<SellerOrdersPage />} />
         </Route>
@@ -42,10 +48,10 @@ function App() {
 
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/admin" element={<DashboardLayout areaName="Admin Dashboard" />}>
-          <Route path="users" element={<PlaceholderPage title="Admin Users" description="Admin user management page shell." />} />
-          <Route path="seller-approvals" element={<PlaceholderPage title="Admin Seller Approvals" description="Seller approval page shell." />} />
-          <Route path="categories" element={<PlaceholderPage title="Admin Categories" description="Admin category management page shell." />} />
-          <Route path="dashboard" element={<PlaceholderPage title="Admin Dashboard" description="Admin dashboard page shell." />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="seller-approvals" element={<AdminSellerApprovalsPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
         </Route>
       </Route>
 
