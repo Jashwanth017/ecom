@@ -7,18 +7,22 @@ function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [formState, setFormState] = useState({ name: "", slug: "" });
   const [feedback, setFeedback] = useState({ error: "", success: "" });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadCategories();
   }, [accessToken]);
 
   async function loadCategories() {
+    setLoading(true);
     try {
       const data = await apiClient.getAdminCategories(accessToken);
       setCategories(data ?? []);
       setFeedback((previous) => ({ ...previous, error: "" }));
     } catch (err) {
       setFeedback({ error: err.message || "Unable to load categories.", success: "" });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -76,11 +80,13 @@ function AdminCategoriesPage() {
         </div>
 
         <div className="seller-category-grid">
-          {categories.length === 0 ? (
+          {loading ? (
+            <p className="empty-cell">Loading categories...</p>
+          ) : categories.length === 0 ? (
             <p className="empty-cell">No categories created yet.</p>
           ) : (
             categories.map((category) => (
-              <article key={category.id} className="seller-category-card">
+              <article key={category.categoryId} className="seller-category-card">
                 <span className="product-category">{category.slug}</span>
                 <h3>{category.name}</h3>
               </article>

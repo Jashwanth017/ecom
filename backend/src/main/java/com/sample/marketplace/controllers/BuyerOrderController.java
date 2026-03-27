@@ -2,13 +2,16 @@ package com.sample.marketplace.controllers;
 
 import com.sample.marketplace.dto.order.BuyerOrderDetailResponse;
 import com.sample.marketplace.dto.order.BuyerOrderSummaryResponse;
+import com.sample.marketplace.dto.order.PlaceOrderRequest;
 import com.sample.marketplace.security.AuthenticatedUser;
+import jakarta.validation.Valid;
 import com.sample.marketplace.services.OrderService;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,8 +26,11 @@ public class BuyerOrderController {
     }
 
     @PostMapping
-    public BuyerOrderDetailResponse placeOrder(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
-        return orderService.placeOrder(authenticatedUser);
+    public BuyerOrderDetailResponse placeOrder(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @Valid @RequestBody PlaceOrderRequest request
+    ) {
+        return orderService.placeOrder(authenticatedUser, request.addressId());
     }
 
     @GetMapping

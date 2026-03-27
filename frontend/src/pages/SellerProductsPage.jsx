@@ -25,9 +25,11 @@ function SellerProductsPage() {
   const [formState, setFormState] = useState(initialProductState);
   const [editingId, setEditingId] = useState(null);
   const [feedback, setFeedback] = useState({ error: "", success: "" });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
         const [productData, categoryData] = await Promise.all([
           apiClient.getSellerProducts(accessToken),
@@ -35,8 +37,11 @@ function SellerProductsPage() {
         ]);
         setProducts(productData);
         setCategories(categoryData);
+        setFeedback((previous) => ({ ...previous, error: "" }));
       } catch (err) {
         setFeedback({ error: err.message || "Unable to load seller products.", success: "" });
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -216,7 +221,9 @@ function SellerProductsPage() {
         </div>
 
         <div className="product-management-grid">
-          {products.length === 0 ? (
+          {loading ? (
+            <p className="empty-cell">Loading products...</p>
+          ) : products.length === 0 ? (
             <p className="empty-cell">No products added yet.</p>
           ) : (
             products.map((product) => (

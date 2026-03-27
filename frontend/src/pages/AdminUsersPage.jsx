@@ -9,18 +9,22 @@ function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [feedback, setFeedback] = useState({ error: "", success: "" });
   const [loadingUserId, setLoadingUserId] = useState(null);
+  const [loadingList, setLoadingList] = useState(true);
 
   useEffect(() => {
     loadUsers();
   }, [accessToken, filters.role, filters.status]);
 
   async function loadUsers() {
+    setLoadingList(true);
     try {
       const data = await apiClient.getAdminUsers(accessToken, filters);
       setUsers(data ?? []);
       setFeedback((previous) => ({ ...previous, error: "" }));
     } catch (err) {
       setFeedback({ error: err.message || "Unable to load users.", success: "" });
+    } finally {
+      setLoadingList(false);
     }
   }
 
@@ -105,7 +109,9 @@ function AdminUsersPage() {
         {feedback.success ? <p className="form-feedback form-feedback-success">{feedback.success}</p> : null}
 
         <div className="admin-user-list">
-          {users.length === 0 ? (
+          {loadingList ? (
+            <p className="empty-cell">Loading users...</p>
+          ) : users.length === 0 ? (
             <p className="empty-cell">No users found for the selected filters.</p>
           ) : (
             users.map((user) => (

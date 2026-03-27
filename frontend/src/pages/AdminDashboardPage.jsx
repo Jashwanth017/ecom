@@ -7,14 +7,19 @@ function AdminDashboardPage() {
   const { accessToken } = useAuth();
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadSummary() {
+      setLoading(true);
       try {
         const data = await apiClient.getAdminDashboardSummary(accessToken);
         setSummary(data);
+        setError("");
       } catch (err) {
         setError(err.message || "Unable to load admin dashboard.");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -31,6 +36,7 @@ function AdminDashboardPage() {
       </div>
 
       {error ? <p className="form-feedback form-feedback-error">{error}</p> : null}
+      {loading ? <p className="empty-cell">Loading admin dashboard...</p> : null}
 
       <div className="stats-grid admin-stats-grid">
         <article className="stat-card">

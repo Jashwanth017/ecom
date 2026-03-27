@@ -10,6 +10,7 @@ public record BuyerOrderDetailResponse(
         OrderStatus status,
         BigDecimal totalAmount,
         Instant placedAt,
+        OrderDeliveryAddressResponse deliveryAddress,
         List<OrderItemResponse> items
 ) {
 }

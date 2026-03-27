@@ -14,9 +14,11 @@ function SellerProfilePage() {
     rejectionReason: ""
   });
   const [feedback, setFeedback] = useState({ error: "", success: "" });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
+      setLoading(true);
       try {
         const data = await apiClient.getSellerProfile(accessToken);
         setFormState({
@@ -30,6 +32,8 @@ function SellerProfilePage() {
         });
       } catch (err) {
         setFeedback({ error: err.message || "Unable to load seller profile.", success: "" });
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -86,6 +90,7 @@ function SellerProfilePage() {
         {meta.rejectionReason ? (
           <p className="form-feedback form-feedback-error">{meta.rejectionReason}</p>
         ) : null}
+        {loading ? <p className="empty-cell">Loading seller profile...</p> : null}
       </div>
 
       <form className="panel-card seller-form" onSubmit={handleSubmit}>

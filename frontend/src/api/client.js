@@ -21,8 +21,13 @@ async function request(path, { method = "GET", body, token } = {}) {
   const payload = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    const errorMessage = payload?.message || "Request failed";
-    throw new Error(errorMessage);
+    const validationErrors = Array.isArray(payload?.errors) ? payload.errors.filter(Boolean) : [];
+    const errorMessage = validationErrors[0] || payload?.message || "Request failed";
+    const error = new Error(errorMessage);
+    error.details = validationErrors;
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
 
   return payload;
@@ -72,6 +77,118 @@ export const apiClient = {
 
   getCategories() {
     return request("/catalog/categories");
+  },
+
+  getCatalogProducts(filters = {}) {
+    const search = new URLSearchParams();
+    if (filters.search) {
+      search.set("search", filters.search);
+    }
+    if (filters.categoryId) {
+      search.set("categoryId", String(filters.categoryId));
+    }
+    if (filters.sort) {
+      search.set("sort", filters.sort);
+    }
+
+    const suffix = search.toString() ? `?${search}` : "";
+    return request(`/catalog/products${suffix}`);
+  },
+
+  getCatalogProduct(productId) {
+    return request(`/catalog/products/${productId}`);
+  },
+
+  getBuyerProfile(accessToken) {
+    return request("/buyer/profile", {
+      token: accessToken
+    });
+  },
+
+  updateBuyerProfile(accessToken, data) {
+    return request("/buyer/profile", {
+      method: "PUT",
+      body: data,
+      token: accessToken
+    });
+  },
+
+  getBuyerAddresses(accessToken) {
+    return request("/buyer/addresses", {
+      token: accessToken
+    });
+  },
+
+  createBuyerAddress(accessToken, data) {
+    return request("/buyer/addresses", {
+      method: "POST",
+      body: data,
+      token: accessToken
+    });
+  },
+
+  updateBuyerAddress(accessToken, addressId, data) {
+    return request(`/buyer/addresses/${addressId}`, {
+      method: "PUT",
+      body: data,
+      token: accessToken
+    });
+  },
+
+  deleteBuyerAddress(accessToken, addressId) {
+    return request(`/buyer/addresses/${addressId}`, {
+      method: "DELETE",
+      token: accessToken
+    });
+  },
+
+  getBuyerCart(accessToken) {
+    return request("/buyer/cart", {
+      token: accessToken
+    });
+  },
+
+  addBuyerCartItem(accessToken, data) {
+    return request("/buyer/cart/items", {
+      method: "POST",
+      body: data,
+      token: accessToken
+    });
+  },
+
+  updateBuyerCartItem(accessToken, cartItemId, quantity) {
+    return request(`/buyer/cart/items/${cartItemId}`, {
+      method: "PUT",
+      body: { quantity },
+      token: accessToken
+    });
+  },
+
+  removeBuyerCartItem(accessToken, cartItemId) {
+    return request(`/buyer/cart/items/${cartItemId}`, {
+      method: "DELETE",
+      token: accessToken
+    });
+  },
+
+  getBuyerOrders(accessToken) {
+    return request("/buyer/orders", {
+      token: accessToken
+    });
+  },
+
+  getBuyerOrder(accessToken, orderId) {
+    return request(`/buyer/orders/${orderId}`, {
+      token: accessToken
+    });
+  },
+
+  placeBuyerOrder(accessToken, addressId) {
+    return request("/buyer/orders", {
+      method: "POST",
+      body: { addressId },
+      token: accessToken
+    });
   },
 
   getSellerDashboardSummary(accessToken) {

@@ -8,18 +8,22 @@ function AdminSellerApprovalsPage() {
   const [reasons, setReasons] = useState({});
   const [feedback, setFeedback] = useState({ error: "", success: "" });
   const [loadingId, setLoadingId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPendingSellers();
   }, [accessToken]);
 
   async function loadPendingSellers() {
+    setLoading(true);
     try {
       const data = await apiClient.getPendingSellerApprovals(accessToken);
       setSellers(data ?? []);
       setFeedback((previous) => ({ ...previous, error: "" }));
     } catch (err) {
       setFeedback({ error: err.message || "Unable to load pending sellers.", success: "" });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -78,7 +82,11 @@ function AdminSellerApprovalsPage() {
       {feedback.success ? <p className="form-feedback form-feedback-success">{feedback.success}</p> : null}
 
       <div className="product-management-grid">
-        {sellers.length === 0 ? (
+        {loading ? (
+          <div className="table-card">
+            <p className="empty-cell">Loading pending sellers...</p>
+          </div>
+        ) : sellers.length === 0 ? (
           <div className="table-card">
             <p className="empty-cell">No pending seller approvals right now.</p>
           </div>

@@ -6,14 +6,19 @@ function SellerDashboardPage() {
   const { accessToken } = useAuth();
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadSummary() {
+      setLoading(true);
       try {
         const data = await apiClient.getSellerDashboardSummary(accessToken);
         setSummary(data);
+        setError("");
       } catch (err) {
         setError(err.message || "Unable to load dashboard summary.");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -30,6 +35,8 @@ function SellerDashboardPage() {
       </div>
 
       {error ? <p className="form-feedback form-feedback-error">{error}</p> : null}
+
+      {loading ? <p className="empty-cell">Loading seller dashboard...</p> : null}
 
       <div className="stats-grid">
         <article className="stat-card">

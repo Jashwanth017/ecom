@@ -7,8 +7,14 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminSellerApprovalsPage from "./pages/AdminSellerApprovalsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AuthPage from "./pages/AuthPage";
+import BuyerAddressesPage from "./pages/BuyerAddressesPage";
+import BuyerCartPage from "./pages/BuyerCartPage";
+import BuyerOrdersPage from "./pages/BuyerOrdersPage";
+import BuyerProfilePage from "./pages/BuyerProfilePage";
 import HomePage from "./pages/HomePage";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import ProductCatalogPage from "./pages/ProductCatalogPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import SellerCategoriesPage from "./pages/SellerCategoriesPage";
 import SellerDashboardPage from "./pages/SellerDashboardPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
@@ -25,14 +31,14 @@ function App() {
         <Route path="/admin/login" element={<AuthPage role="admin" mode="login" />} />
         <Route path="/buyer/register" element={<AuthPage role="buyer" mode="register" />} />
         <Route path="/seller/register" element={<AuthPage role="seller" mode="register" />} />
-        <Route path="/products" element={<PlaceholderPage title="Product List" description="Public catalog listing page shell." />} />
-        <Route path="/products/:productId" element={<PlaceholderPage title="Product Detail" description="Product detail page shell." />} />
+        <Route path="/products" element={<ProductCatalogPage />} />
+        <Route path="/products/:productId" element={<ProductDetailPage />} />
 
         <Route element={<ProtectedRoute allowedRoles={["BUYER"]} />}>
-          <Route path="/buyer/cart" element={<PlaceholderPage title="Buyer Cart" description="Buyer cart page shell." />} />
-          <Route path="/buyer/orders" element={<PlaceholderPage title="Buyer Orders" description="Buyer orders page shell." />} />
-          <Route path="/buyer/profile" element={<PlaceholderPage title="Buyer Profile" description="Buyer profile page shell." />} />
-          <Route path="/buyer/addresses" element={<PlaceholderPage title="Buyer Addresses" description="Buyer address management page shell." />} />
+          <Route path="/buyer/cart" element={<BuyerCartPage />} />
+          <Route path="/buyer/orders" element={<BuyerOrdersPage />} />
+          <Route path="/buyer/profile" element={<BuyerProfilePage />} />
+          <Route path="/buyer/addresses" element={<BuyerAddressesPage />} />
         </Route>
       </Route>
 

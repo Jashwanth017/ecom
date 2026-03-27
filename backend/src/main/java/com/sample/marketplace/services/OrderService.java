@@ -2,8 +2,10 @@ package com.sample.marketplace.services;
 
 import com.sample.marketplace.dto.order.BuyerOrderDetailResponse;
 import com.sample.marketplace.dto.order.BuyerOrderSummaryResponse;
+import com.sample.marketplace.dto.order.OrderDeliveryAddressResponse;
 import com.sample.marketplace.dto.order.OrderItemResponse;
 import com.sample.marketplace.dto.order.SellerOrderItemResponse;
+import com.sample.marketplace.models.BuyerAddress;
 import com.sample.marketplace.models.BuyerProfile;
 import com.sample.marketplace.models.Cart;
 import com.sample.marketplace.models.CartItem;
@@ -13,6 +15,7 @@ import com.sample.marketplace.models.Product;
 import com.sample.marketplace.models.enums.ProductStatus;
 import com.sample.marketplace.models.enums.Role;
 import com.sample.marketplace.repositories.BuyerProfileRepository;
+import com.sample.marketplace.repositories.BuyerAddressRepository;
 import com.sample.marketplace.repositories.CartItemRepository;
 import com.sample.marketplace.repositories.CartRepository;
 import com.sample.marketplace.repositories.OrderItemRepository;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final BuyerProfileRepository buyerProfileRepository;
+    private final BuyerAddressRepository buyerAddressRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
@@ -38,6 +42,7 @@ public class OrderService {
 
     public OrderService(
             BuyerProfileRepository buyerProfileRepository,
+            BuyerAddressRepository buyerAddressRepository,
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             OrderRepository orderRepository,
@@ -45,6 +50,7 @@ public class OrderService {
             ProductRepository productRepository
     ) {
         this.buyerProfileRepository = buyerProfileRepository;
+        this.buyerAddressRepository = buyerAddressRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -52,8 +58,9 @@ public class OrderService {
         this.productRepository = productRepository;
     }
 
-    public BuyerOrderDetailResponse placeOrder(AuthenticatedUser authenticatedUser) {
+    public BuyerOrderDetailResponse placeOrder(AuthenticatedUser authenticatedUser, Long addressId) {
         BuyerProfile buyerProfile = getBuyerProfile(authenticatedUser);
+        BuyerAddress deliveryAddress = getOwnedBuyerAddress(authenticatedUser, addressId);
         Cart cart = cartRepository.findByBuyerUserId(authenticatedUser.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Cart is empty"));
         List<CartItem> cartItems = cartItemRepository.findAllByCartId(cart.getId());
@@ -66,7 +73,15 @@ public class OrderService {
                 .map(item -> calculateLineTotal(item.getProduct(), item.getQuantity()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Order order = orderRepository.save(Order.create(buyerProfile, totalAmount));
+        Order order = orderRepository.save(Order.create(
+                buyerProfile,
+                totalAmount,
+                deliveryAddress.getAddressLine1(),
+                deliveryAddress.getAddressLine2(),
+                deliveryAddress.getCity(),
+                deliveryAddress.getState(),
+                deliveryAddress.getPostalCode()
+        ));
 
         List<OrderItem> orderItems = cartItems.stream()
                 .map(cartItem -> createOrderItem(order, cartItem))
@@ -130,6 +145,12 @@ public class OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Buyer profile not found for user id " + authenticatedUser.getId()));
     }
 
+    private BuyerAddress getOwnedBuyerAddress(AuthenticatedUser authenticatedUser, Long addressId) {
+        ensureBuyerRole(authenticatedUser);
+        return buyerAddressRepository.findByIdAndBuyerProfileUserId(addressId, authenticatedUser.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Buyer address not found for id " + addressId));
+    }
+
     private void ensureBuyerRole(AuthenticatedUser authenticatedUser) {
         if (authenticatedUser.getRole() != Role.BUYER) {
             throw new IllegalArgumentException("Authenticated user is not a buyer");
@@ -172,6 +193,13 @@ public class OrderService {
                 order.getStatus(),
                 order.getTotalAmount(),
                 order.getPlacedAt(),
+                new OrderDeliveryAddressResponse(
+                        order.getDeliveryAddressLine1(),
+                        order.getDeliveryAddressLine2(),
+                        order.getDeliveryCity(),
+                        order.getDeliveryState(),
+                        order.getDeliveryPostalCode()
+                ),
                 orderItems.stream().map(this::toOrderItemResponse).toList()
         );
     }

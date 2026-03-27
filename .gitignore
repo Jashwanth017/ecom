@@ -13,3 +13,4 @@ backend/.mvn/wrapper/maven-wrapper.jar
 
 .env
 node_modules/
+frontend/dist/

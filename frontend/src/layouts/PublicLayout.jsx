@@ -1,4 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { apiClient } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
 const guestLinks = [
@@ -11,16 +13,6 @@ const quickActions = {
     { to: "/buyer/cart", label: "🛒", title: "Cart" },
     { to: "/buyer/orders", label: "📦", title: "Orders" },
     { to: "/buyer/profile", label: "👤", title: "Profile" }
-  ],
-  SELLER: [
-    { to: "/seller/orders", label: "📦", title: "Orders" },
-    { to: "/seller/profile", label: "🏪", title: "Profile" },
-    { to: "/seller/dashboard", label: "📊", title: "Dashboard" }
-  ],
-  ADMIN: [
-    { to: "/admin/dashboard", label: "📊", title: "Dashboard" },
-    { to: "/admin/users", label: "👥", title: "Users" },
-    { to: "/admin/categories", label: "🗂️", title: "Categories" }
   ]
 };
 
@@ -29,6 +21,24 @@ function PublicLayout() {
   const location = useLocation();
   const showCategories = location.pathname === "/" || location.pathname === "/products";
   const actions = quickActions[user?.role] ?? [];
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (!showCategories) {
+      return;
+    }
+
+    async function loadCategories() {
+      try {
+        const data = await apiClient.getCategories();
+        setCategories(data ?? []);
+      } catch {
+        setCategories([]);
+      }
+    }
+
+    loadCategories();
+  }, [showCategories]);
 
   return (
     <div className="app-shell public-shell">
@@ -81,11 +91,15 @@ function PublicLayout() {
 
       {showCategories ? (
         <div className="category-strip">
-          {["Fashion", "Electronics", "Kitchen", "Books", "Beauty", "Sports", "Furniture"].map((item) => (
-            <button key={item} type="button" className="category-pill">
-              {item}
-            </button>
-          ))}
+          {categories.length === 0 ? (
+            <span className="category-pill category-pill-static">Catalog categories will appear here.</span>
+          ) : (
+            categories.map((item) => (
+              <Link key={item.categoryId} to={`/products?categoryId=${item.categoryId}`} className="category-pill">
+                {item.name}
+              </Link>
+            ))
+          )}
         </div>
       ) : null}
 

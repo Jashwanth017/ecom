@@ -6,14 +6,19 @@ function SellerOrdersPage() {
   const { accessToken } = useAuth();
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadOrders() {
+      setLoading(true);
       try {
         const data = await apiClient.getSellerOrderItems(accessToken);
         setOrders(data);
+        setError("");
       } catch (err) {
         setError(err.message || "Unable to load seller orders.");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -30,6 +35,7 @@ function SellerOrdersPage() {
       </div>
 
       {error ? <p className="form-feedback form-feedback-error">{error}</p> : null}
+      {loading ? <p className="empty-cell">Loading seller orders...</p> : null}
 
       <div className="table-card">
         <table className="seller-table">

@@ -1,15 +1,34 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const featuredProducts = [
-  { id: 1, name: "Nova Wireless Headphones", category: "Electronics", price: "$129", oldPrice: "$169", blurb: "Noise-isolated sound with a 40-hour battery." },
-  { id: 2, name: "Daily Move Sneakers", category: "Fashion", price: "$74", oldPrice: "$99", blurb: "Built for long city walks and everyday wear." },
-  { id: 3, name: "Nordic Brew Kettle", category: "Kitchen", price: "$58", oldPrice: "$79", blurb: "Pour-over precision in a matte steel finish." },
-  { id: 4, name: "Studio Table Lamp", category: "Home", price: "$42", oldPrice: "$56", blurb: "Warm glow for desks, nightstands, and corners." },
-  { id: 5, name: "Pulse Smartwatch", category: "Electronics", price: "$149", oldPrice: "$189", blurb: "Fitness tracking, message sync, and clean AMOLED display." },
-  { id: 6, name: "Linen Weekend Tote", category: "Fashion", price: "$61", oldPrice: "$82", blurb: "Structured carry-all with polished hardware details." }
-];
+import { apiClient } from "../api/client";
 
 function HomePage() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadHomeData() {
+      setLoading(true);
+      try {
+        const [catalogProducts, catalogCategories] = await Promise.all([
+          apiClient.getCatalogProducts(),
+          apiClient.getCategories()
+        ]);
+        setProducts((catalogProducts ?? []).slice(0, 6));
+        setCategories(catalogCategories ?? []);
+        setError("");
+      } catch (err) {
+        setError(err.message || "Unable to load marketplace catalog.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadHomeData();
+  }, []);
+
   return (
     <div className="home-stack">
       <section className="hero-card">
@@ -26,12 +45,12 @@ function HomePage() {
           </div>
           <div className="hero-metrics">
             <div>
-              <strong>1.2k+</strong>
-              <span>Products ready</span>
+              <strong>{loading ? "..." : products.length}</strong>
+              <span>Featured live products</span>
             </div>
             <div>
-              <strong>250+</strong>
-              <span>Verified sellers</span>
+              <strong>{loading ? "..." : categories.length}</strong>
+              <span>Browseable categories</span>
             </div>
             <div>
               <strong>48h</strong>
@@ -70,30 +89,56 @@ function HomePage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Trending Products</p>
-            <h3>Best-selling picks this week</h3>
+            <h3>Live picks from the catalog</h3>
           </div>
           <Link to="/products" className="button button-secondary">Open Catalog</Link>
         </div>
 
-        <div className="product-grid">
-          {featuredProducts.map((product) => (
-            <article key={product.id} className="product-card">
-              <span className="product-category">{product.category}</span>
-              <h4>{product.name}</h4>
-              <p>{product.blurb}</p>
-              <div className="product-footer">
-                <div className="price-stack">
-                  <strong>{product.price}</strong>
-                  <span>{product.oldPrice}</span>
+        {error ? <p className="form-feedback form-feedback-error">{error}</p> : null}
+
+        {loading ? (
+          <div className="product-grid">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <article key={index} className="product-card product-card-skeleton">
+                <span className="product-category">Loading</span>
+                <h4>Loading product...</h4>
+                <p>Fetching live catalog data from the backend.</p>
+              </article>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="placeholder-card">
+            <p className="eyebrow">Catalog Empty</p>
+            <h2>No products are available yet.</h2>
+            <p>Add products from a seller account and they will appear here automatically.</p>
+          </div>
+        ) : (
+          <div className="product-grid">
+            {products.map((product) => (
+              <article key={product.productId} className="product-card">
+                <span className="product-category">{product.categoryName}</span>
+                <h4>{product.name}</h4>
+                <p>Explore this live catalog item and view more details on the product page.</p>
+                <div className="product-footer">
+                  <div className="price-stack">
+                    <strong>{formatCurrency(product.price)}</strong>
+                  </div>
+                  <Link to={`/products/${product.productId}`} className="text-link">Details</Link>
                 </div>
-                <Link to={`/products/${product.id}`} className="text-link">Details</Link>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(Number(value ?? 0));
 }
 
 export default HomePage;

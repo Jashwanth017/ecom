@@ -52,6 +52,17 @@ function AuthPage({ role, mode }) {
     event.preventDefault();
     setFeedback({ error: "", success: "" });
 
+    const clientSideError = validateForm({
+      mode,
+      role: activeRole.role,
+      formState
+    });
+
+    if (clientSideError) {
+      setFeedback({ error: clientSideError, success: "" });
+      return;
+    }
+
     try {
       if (mode === "login") {
         const response = await login({
@@ -94,7 +105,7 @@ function AuthPage({ role, mode }) {
       navigate("/seller/login", { replace: true });
     } catch (error) {
       setFeedback({
-        error: error.message || "Unable to continue right now.",
+        error: formatErrorMessage(error),
         success: ""
       });
     }
@@ -148,6 +159,8 @@ function AuthPage({ role, mode }) {
                     placeholder="Enter your full name"
                     value={formState.fullName}
                     onChange={updateField("fullName")}
+                    maxLength={120}
+                    required
                   />
                 </label>
               ) : null}
@@ -159,6 +172,8 @@ function AuthPage({ role, mode }) {
                     placeholder="Enter your store name"
                     value={formState.storeName}
                     onChange={updateField("storeName")}
+                    maxLength={150}
+                    required
                   />
                 </label>
               ) : null}
@@ -172,6 +187,7 @@ function AuthPage({ role, mode }) {
               placeholder="Enter your email"
               value={formState.email}
               onChange={updateField("email")}
+              required
             />
           </label>
 
@@ -182,6 +198,9 @@ function AuthPage({ role, mode }) {
               placeholder="Enter your password"
               value={formState.password}
               onChange={updateField("password")}
+              minLength={8}
+              maxLength={100}
+              required
             />
           </label>
 
@@ -193,6 +212,7 @@ function AuthPage({ role, mode }) {
                 placeholder="Enter your phone number"
                 value={formState.phone}
                 onChange={updateField("phone")}
+                maxLength={20}
               />
             </label>
           ) : null}
@@ -205,6 +225,7 @@ function AuthPage({ role, mode }) {
                 placeholder="Tell users about your store"
                 value={formState.storeDescription}
                 onChange={updateField("storeDescription")}
+                maxLength={1000}
               />
             </label>
           ) : null}
@@ -234,6 +255,38 @@ function resolvePostLoginPath(role, redirectTo) {
     return redirectTo;
   }
   return "/";
+}
+
+function validateForm({ mode, role, formState }) {
+  if (mode !== "register") {
+    return null;
+  }
+
+  if (!formState.email.trim()) {
+    return "Email is required.";
+  }
+
+  if (formState.password.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+
+  if (role === "buyer" && !formState.fullName.trim()) {
+    return "Full name is required.";
+  }
+
+  if (role === "seller" && !formState.storeName.trim()) {
+    return "Store name is required.";
+  }
+
+  return null;
+}
+
+function formatErrorMessage(error) {
+  if (Array.isArray(error?.details) && error.details.length > 0) {
+    return error.details.join(", ");
+  }
+
+  return error?.message || "Unable to continue right now.";
 }
 
 export default AuthPage;
