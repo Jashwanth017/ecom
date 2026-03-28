@@ -2,8 +2,12 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 function ProtectedRoute({ allowedRoles }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, status } = useAuth();
   const location = useLocation();
+
+  if (status === "bootstrapping") {
+    return <div className="route-loading-state">Checking your session...</div>;
+  }
 
   if (!isAuthenticated || !user) {
     return <Navigate to={resolveLoginPath(allowedRoles)} replace state={{ from: location }} />;

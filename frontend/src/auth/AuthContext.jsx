@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { apiClient } from "../api/client";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { apiClient, configureApiClientAuth } from "../api/client";
 
 const AUTH_STORAGE_KEY = "marketplace-auth";
 
@@ -22,7 +22,12 @@ function readStoredSession() {
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => readStoredSession());
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState(() => (readStoredSession() ? "bootstrapping" : "idle"));
+  const sessionRef = useRef(session);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     if (session) {
@@ -32,6 +37,74 @@ export function AuthProvider({ children }) {
 
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
   }, [session]);
+
+  useEffect(() => {
+    configureApiClientAuth({
+      getAccessToken: () => sessionRef.current?.accessToken ?? null,
+      onUnauthorized: refreshSession
+    });
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function bootstrapSession() {
+      if (!sessionRef.current?.accessToken) {
+        if (isActive) {
+          setStatus("idle");
+        }
+        return;
+      }
+
+      if (isActive) {
+        setStatus("bootstrapping");
+      }
+
+      try {
+        const currentUser = await apiClient.me(sessionRef.current.accessToken);
+        if (!isActive) {
+          return;
+        }
+
+        setSession((previous) => previous ? {
+          ...previous,
+          user: {
+            ...previous.user,
+            ...currentUser
+          }
+        } : previous);
+        setStatus("authenticated");
+      } catch (error) {
+        try {
+          await refreshSession();
+          const currentUser = await apiClient.me(sessionRef.current?.accessToken);
+          if (!isActive) {
+            return;
+          }
+
+          setSession((previous) => previous ? {
+            ...previous,
+            user: {
+              ...previous.user,
+              ...currentUser
+            }
+          } : previous);
+          setStatus("authenticated");
+        } catch {
+          if (isActive) {
+            setSession(null);
+            setStatus("idle");
+          }
+        }
+      }
+    }
+
+    bootstrapSession();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   async function login(payload) {
     setStatus("loading");
@@ -81,6 +154,36 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function refreshSession() {
+    const currentSession = sessionRef.current;
+    if (!currentSession?.refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    try {
+      const response = await apiClient.refresh(currentSession.refreshToken);
+      const nextSession = {
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        user: {
+          id: response.userId,
+          email: response.email,
+          role: response.role,
+          status: response.status,
+          sellerApprovalStatus: response.sellerApprovalStatus,
+          redirectTo: response.redirectTo
+        }
+      };
+      setSession(nextSession);
+      setStatus("authenticated");
+      return nextSession;
+    } catch (error) {
+      setSession(null);
+      setStatus("idle");
+      throw error;
+    }
+  }
+
   async function hydrateUser() {
     if (!session?.accessToken) {
       return null;
@@ -126,6 +229,7 @@ export function AuthProvider({ children }) {
     login,
     registerBuyer,
     registerSeller,
+    refreshSession,
     hydrateUser,
     logout
   }), [session, status]);

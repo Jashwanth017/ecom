@@ -89,14 +89,20 @@ function SellerProductsPage() {
     event.preventDefault();
     setFeedback({ error: "", success: "" });
 
+    const validationError = validateProductForm(formState);
+    if (validationError) {
+      setFeedback({ error: validationError, success: "" });
+      return;
+    }
+
     const payload = {
       categoryId: Number(formState.categoryId),
-      name: formState.name,
-      description: formState.description,
+      name: formState.name.trim(),
+      description: formState.description.trim(),
       price: Number(formState.price),
       stockQuantity: Number(formState.stockQuantity),
       status: formState.status,
-      imageUrl: formState.imageUrl || null
+      imageUrl: formState.imageUrl.trim() || null
     };
 
     try {
@@ -158,10 +164,10 @@ function SellerProductsPage() {
 
         <label>
           Category
-          <select value={formState.categoryId} onChange={handleChange("categoryId")}>
+          <select value={formState.categoryId} onChange={handleChange("categoryId")} required>
             <option value="">Select category</option>
             {categories.map((category) => (
-              <option key={category.categoryId} value={category.categoryId}>
+              <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}
@@ -170,23 +176,23 @@ function SellerProductsPage() {
 
         <label>
           Product Name
-          <input type="text" value={formState.name} onChange={handleChange("name")} />
+          <input type="text" value={formState.name} onChange={handleChange("name")} maxLength={200} required />
         </label>
 
         <label>
           Description
-          <textarea rows="5" value={formState.description} onChange={handleChange("description")} />
+          <textarea rows="5" value={formState.description} onChange={handleChange("description")} required />
         </label>
 
         <div className="inline-field-grid">
           <label>
             Price
-            <input type="number" min="0" step="0.01" value={formState.price} onChange={handleChange("price")} />
+            <input type="number" min="0" step="0.01" value={formState.price} onChange={handleChange("price")} required />
           </label>
 
           <label>
             Stock
-            <input type="number" min="0" value={formState.stockQuantity} onChange={handleChange("stockQuantity")} />
+            <input type="number" min="0" value={formState.stockQuantity} onChange={handleChange("stockQuantity")} required />
           </label>
         </div>
 
@@ -288,6 +294,25 @@ function formatCurrency(value) {
     style: "currency",
     currency: "USD"
   }).format(Number(value));
+}
+
+function validateProductForm(formState) {
+  if (!formState.categoryId) {
+    return "Category is required.";
+  }
+  if (!formState.name.trim()) {
+    return "Product name is required.";
+  }
+  if (!formState.description.trim()) {
+    return "Description is required.";
+  }
+  if (formState.price === "" || Number(formState.price) < 0) {
+    return "Price must be zero or more.";
+  }
+  if (formState.stockQuantity === "" || Number(formState.stockQuantity) < 0) {
+    return "Stock must be zero or more.";
+  }
+  return null;
 }
 
 export default SellerProductsPage;

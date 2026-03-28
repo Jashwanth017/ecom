@@ -1,14 +1,22 @@
 const API_BASE_URL = "http://localhost:8080/api/v1";
+let authAccessTokenProvider = null;
+let authRefreshHandler = null;
 
-async function request(path, { method = "GET", body, token } = {}) {
+export function configureApiClientAuth({ getAccessToken, onUnauthorized } = {}) {
+  authAccessTokenProvider = typeof getAccessToken === "function" ? getAccessToken : null;
+  authRefreshHandler = typeof onUnauthorized === "function" ? onUnauthorized : null;
+}
+
+async function request(path, { method = "GET", body, token } = {}, didRetry = false) {
+  const resolvedToken = token ?? authAccessTokenProvider?.() ?? null;
   const headers = {};
 
   if (body) {
     headers["Content-Type"] = "application/json";
   }
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (resolvedToken) {
+    headers.Authorization = `Bearer ${resolvedToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -19,6 +27,21 @@ async function request(path, { method = "GET", body, token } = {}) {
 
   const isJson = response.headers.get("content-type")?.includes("application/json");
   const payload = isJson ? await response.json() : null;
+
+  if (
+    response.status === 401 &&
+    resolvedToken &&
+    !didRetry &&
+    !path.startsWith("/auth/") &&
+    authRefreshHandler
+  ) {
+    await authRefreshHandler();
+    const nextToken = authAccessTokenProvider?.() ?? null;
+
+    if (nextToken && nextToken !== resolvedToken) {
+      return request(path, { method, body, token: nextToken }, true);
+    }
+  }
 
   if (!response.ok) {
     const validationErrors = Array.isArray(payload?.errors) ? payload.errors.filter(Boolean) : [];

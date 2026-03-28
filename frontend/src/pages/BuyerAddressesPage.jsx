@@ -68,6 +68,12 @@ function BuyerAddressesPage() {
     event.preventDefault();
     setFeedback({ error: "", success: "" });
 
+    const validationError = validateAddressForm(formState);
+    if (validationError) {
+      setFeedback({ error: validationError, success: "" });
+      return;
+    }
+
     try {
       if (editingAddressId) {
         const updatedAddress = await apiClient.updateBuyerAddress(accessToken, editingAddressId, formState);
@@ -258,6 +264,22 @@ function BuyerAddressesPage() {
       </div>
     </section>
   );
+}
+
+function validateAddressForm(formState) {
+  if (!formState.addressLine1.trim()) {
+    return "Address line 1 is required.";
+  }
+  if (!formState.city.trim()) {
+    return "City is required.";
+  }
+  if (!formState.state.trim()) {
+    return "State is required.";
+  }
+  if (!formState.postalCode.trim()) {
+    return "Postal code is required.";
+  }
+  return null;
 }
 
 export default BuyerAddressesPage;

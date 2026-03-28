@@ -34,7 +34,7 @@ function AuthPage({ role, mode }) {
   }, [role, mode]);
 
   useEffect(() => {
-    if (isAuthenticated && user?.redirectTo) {
+    if (isAuthenticated && user) {
       navigate(resolvePostLoginPath(user.role, user.redirectTo), { replace: true });
     }
   }, [isAuthenticated, navigate, user]);
