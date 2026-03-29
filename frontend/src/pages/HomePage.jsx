@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiClient } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 function HomePage() {
+  const { isAuthenticated, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,12 +37,9 @@ function HomePage() {
         <div className="hero-copy">
           <p className="eyebrow">Marketplace Home</p>
           <h2>Everything you need, from everyday buys to seller storefronts.</h2>
-          <p>
-            The storefront stays open by default. Buyers browse first, sellers list products later, and
-            authentication starts only when the user chooses to sign in.
-          </p>
+          <p>{resolveHeroMessage(isAuthenticated, user?.role)}</p>
           <div className="hero-actions">
-            <Link to="/buyer/login" className="button button-primary">Login to Continue</Link>
+            {resolvePrimaryAction(isAuthenticated, user?.role)}
             <Link to="/products" className="button button-secondary">Shop the Catalog</Link>
           </div>
           <div className="hero-metrics">
@@ -132,6 +131,38 @@ function HomePage() {
       </section>
     </div>
   );
+}
+
+function resolveHeroMessage(isAuthenticated, role) {
+  if (!isAuthenticated) {
+    return "The storefront stays open by default. Buyers browse first, sellers list products later, and authentication starts only when the user chooses to sign in.";
+  }
+
+  if (role === "SELLER") {
+    return "Your seller workspace is ready. Add products, track orders, and keep your storefront updated from the dashboard.";
+  }
+
+  if (role === "ADMIN") {
+    return "Your admin workspace is ready. Review users, manage seller approvals, and keep the marketplace healthy from the dashboard.";
+  }
+
+  return "You are signed in as a buyer. Browse the catalog, manage your cart, and track orders directly from the storefront.";
+}
+
+function resolvePrimaryAction(isAuthenticated, role) {
+  if (!isAuthenticated) {
+    return <Link to="/buyer/login" className="button button-primary">Login to Continue</Link>;
+  }
+
+  if (role === "SELLER") {
+    return <Link to="/seller/dashboard" className="button button-primary">Open Seller Dashboard</Link>;
+  }
+
+  if (role === "ADMIN") {
+    return <Link to="/admin/dashboard" className="button button-primary">Open Admin Dashboard</Link>;
+  }
+
+  return <Link to="/buyer/orders" className="button button-primary">View Your Orders</Link>;
 }
 
 function formatCurrency(value) {

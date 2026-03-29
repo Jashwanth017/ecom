@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
@@ -19,9 +19,11 @@ const quickActions = {
 function PublicLayout() {
   const { isAuthenticated, logout, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const showCategories = location.pathname === "/" || location.pathname === "/products";
   const actions = quickActions[user?.role] ?? [];
   const [categories, setCategories] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     if (!showCategories) {
@@ -40,6 +42,17 @@ function PublicLayout() {
     loadCategories();
   }, [showCategories]);
 
+  function handleSearchSubmit(event) {
+    event.preventDefault();
+    const trimmedSearch = searchValue.trim();
+    if (!trimmedSearch) {
+      navigate("/products");
+      return;
+    }
+
+    navigate(`/products?search=${encodeURIComponent(trimmedSearch)}`);
+  }
+
   return (
     <div className="app-shell public-shell">
       <div className="promo-bar">
@@ -52,9 +65,14 @@ function PublicLayout() {
           <h1>e-market</h1>
         </Link>
 
-        <div className="search-shell">
-          <input type="text" placeholder="Search for shoes, gadgets, home decor..." />
-        </div>
+        <form className="search-shell" onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            placeholder="Search for shoes, gadgets, home decor..."
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+          />
+        </form>
 
         <div className="header-actions">
           <nav className="nav-row">

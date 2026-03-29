@@ -26,15 +26,18 @@ public class AdminService {
     private final UserRepository userRepository;
     private final SellerProfileRepository sellerProfileRepository;
     private final CategoryRepository categoryRepository;
+    private final RefreshTokenService refreshTokenService;
 
     public AdminService(
             UserRepository userRepository,
             SellerProfileRepository sellerProfileRepository,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            RefreshTokenService refreshTokenService
     ) {
         this.userRepository = userRepository;
         this.sellerProfileRepository = sellerProfileRepository;
         this.categoryRepository = categoryRepository;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional(readOnly = true)
@@ -68,6 +71,7 @@ public class AdminService {
     public AdminUserResponse banUser(Long userId) {
         User user = getUserEntity(userId);
         user.updateStatus(UserStatus.BANNED);
+        refreshTokenService.revokeAllActiveTokens(user);
         return toAdminUserResponse(userRepository.save(user));
     }
 

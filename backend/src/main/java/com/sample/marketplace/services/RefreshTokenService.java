@@ -3,6 +3,7 @@ package com.sample.marketplace.services;
 import com.sample.marketplace.exception.InvalidRefreshTokenException;
 import com.sample.marketplace.models.RefreshToken;
 import com.sample.marketplace.models.User;
+import com.sample.marketplace.models.enums.UserStatus;
 import com.sample.marketplace.repositories.RefreshTokenRepository;
 import com.sample.marketplace.security.JwtProperties;
 import java.time.Instant;
@@ -42,6 +43,9 @@ public class RefreshTokenService {
         }
         if (refreshToken.isExpired()) {
             throw new InvalidRefreshTokenException("Refresh token has expired");
+        }
+        if (refreshToken.getUser().getStatus() != UserStatus.ACTIVE) {
+            throw new InvalidRefreshTokenException("Refresh token is no longer valid for this account");
         }
         return refreshToken;
     }

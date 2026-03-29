@@ -334,6 +334,21 @@ a {
   gap: 16px;
 }
 
+.seller-image-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.seller-upload-preview {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
 .product-management-grid {
   display: grid;
   gap: 16px;
@@ -346,6 +361,14 @@ a {
   display: grid;
   gap: 14px;
   background: #fafcff;
+}
+
+.seller-product-image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 16px;
+  background: #e2e8f0;
 }
 
 .seller-product-head {

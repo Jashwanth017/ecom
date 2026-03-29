@@ -56,6 +56,50 @@ async function request(path, { method = "GET", body, token } = {}, didRetry = fa
   return payload;
 }
 
+async function requestMultipart(path, { method = "POST", formData, token } = {}, didRetry = false) {
+  const resolvedToken = token ?? authAccessTokenProvider?.() ?? null;
+  const headers = {};
+
+  if (resolvedToken) {
+    headers.Authorization = `Bearer ${resolvedToken}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: formData
+  });
+
+  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const payload = isJson ? await response.json() : null;
+
+  if (
+    response.status === 401 &&
+    resolvedToken &&
+    !didRetry &&
+    authRefreshHandler
+  ) {
+    await authRefreshHandler();
+    const nextToken = authAccessTokenProvider?.() ?? null;
+
+    if (nextToken && nextToken !== resolvedToken) {
+      return requestMultipart(path, { method, formData, token: nextToken }, true);
+    }
+  }
+
+  if (!response.ok) {
+    const validationErrors = Array.isArray(payload?.errors) ? payload.errors.filter(Boolean) : [];
+    const errorMessage = validationErrors[0] || payload?.message || "Request failed";
+    const error = new Error(errorMessage);
+    error.details = validationErrors;
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
 export const apiClient = {
   login(credentials) {
     return request("/auth/login", {
@@ -356,6 +400,17 @@ export const apiClient = {
     return request(`/seller/products/${productId}/stock`, {
       method: "PATCH",
       body: { stockQuantity },
+      token: accessToken
+    });
+  },
+
+  uploadSellerProductImage(accessToken, image) {
+    const formData = new FormData();
+    formData.append("image", image);
+
+    return requestMultipart("/seller/products/image", {
+      method: "POST",
+      formData,
       token: accessToken
     });
   },

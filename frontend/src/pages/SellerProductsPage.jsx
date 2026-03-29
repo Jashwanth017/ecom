@@ -9,7 +9,8 @@ const initialProductState = {
   price: "",
   stockQuantity: "",
   status: "DISABLED_BY_SELLER",
-  imageUrl: ""
+  imageUrl: "",
+  imageFile: null
 };
 
 const statusOptions = [
@@ -26,6 +27,7 @@ function SellerProductsPage() {
   const [editingId, setEditingId] = useState(null);
   const [feedback, setFeedback] = useState({ error: "", success: "" });
   const [loading, setLoading] = useState(true);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +54,17 @@ function SellerProductsPage() {
     editingId ? "Update Product" : "Add Product"
   ), [editingId]);
 
+  useEffect(() => {
+    if (formState.imageFile) {
+      const nextPreviewUrl = URL.createObjectURL(formState.imageFile);
+      setImagePreviewUrl(nextPreviewUrl);
+      return () => URL.revokeObjectURL(nextPreviewUrl);
+    }
+
+    setImagePreviewUrl(formState.imageUrl || "");
+    return undefined;
+  }, [formState.imageFile, formState.imageUrl]);
+
   function handleChange(field) {
     return (event) => {
       setFormState((previous) => ({
@@ -70,7 +83,8 @@ function SellerProductsPage() {
       price: String(product.price ?? ""),
       stockQuantity: String(product.stockQuantity ?? ""),
       status: product.status ?? "DISABLED_BY_SELLER",
-      imageUrl: product.imageUrl ?? ""
+      imageUrl: product.imageUrl ?? "",
+      imageFile: null
     });
     setFeedback({ error: "", success: "" });
   }
@@ -106,6 +120,11 @@ function SellerProductsPage() {
     };
 
     try {
+      if (formState.imageFile) {
+        const uploadResponse = await apiClient.uploadSellerProductImage(accessToken, formState.imageFile);
+        payload.imageUrl = uploadResponse.imageUrl;
+      }
+
       if (editingId) {
         await apiClient.updateSellerProduct(accessToken, editingId, payload);
         setFeedback({ error: "", success: "Product updated." });
@@ -147,6 +166,14 @@ function SellerProductsPage() {
     }
   }
 
+  function handleImageChange(event) {
+    const file = event.target.files?.[0] ?? null;
+    setFormState((previous) => ({
+      ...previous,
+      imageFile: file
+    }));
+  }
+
   return (
     <section className="seller-page seller-two-column">
       <form className="panel-card seller-form" onSubmit={handleSubmit}>
@@ -167,7 +194,7 @@ function SellerProductsPage() {
           <select value={formState.categoryId} onChange={handleChange("categoryId")} required>
             <option value="">Select category</option>
             {categories.map((category) => (
-              <option key={category.id} value={category.id}>
+              <option key={category.categoryId} value={category.categoryId}>
                 {category.name}
               </option>
             ))}
@@ -207,10 +234,17 @@ function SellerProductsPage() {
           </label>
 
           <label>
-            Image URL
-            <input type="text" value={formState.imageUrl} onChange={handleChange("imageUrl")} />
+            Product Image
+            <input type="file" accept="image/*" onChange={handleImageChange} />
           </label>
         </div>
+
+        {imagePreviewUrl ? (
+          <div className="seller-image-preview">
+            <span className="muted">{formState.imageFile ? "Selected image preview" : "Current image preview"}</span>
+            <img src={imagePreviewUrl} alt="Product preview" className="seller-upload-preview" />
+          </div>
+        ) : null}
 
         {feedback.error ? <p className="form-feedback form-feedback-error">{feedback.error}</p> : null}
         {feedback.success ? <p className="form-feedback form-feedback-success">{feedback.success}</p> : null}
@@ -234,6 +268,10 @@ function SellerProductsPage() {
           ) : (
             products.map((product) => (
               <article key={product.productId} className="seller-product-card">
+                {product.imageUrl ? (
+                  <img src={product.imageUrl} alt={product.name} className="seller-product-image" />
+                ) : null}
+
                 <div className="seller-product-head">
                   <div>
                     <span className="product-category">{product.categoryName}</span>
@@ -311,6 +349,9 @@ function validateProductForm(formState) {
   }
   if (formState.stockQuantity === "" || Number(formState.stockQuantity) < 0) {
     return "Stock must be zero or more.";
+  }
+  if (formState.imageFile && !formState.imageFile.type.startsWith("image/")) {
+    return "Please choose a valid image file.";
   }
   return null;
 }

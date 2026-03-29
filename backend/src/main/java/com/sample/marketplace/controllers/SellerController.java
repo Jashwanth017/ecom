@@ -1,6 +1,7 @@
 package com.sample.marketplace.controllers;
 
 import com.sample.marketplace.dto.seller.CreateProductRequest;
+import com.sample.marketplace.dto.seller.ProductImageUploadResponse;
 import com.sample.marketplace.dto.seller.SellerDashboardSummaryResponse;
 import com.sample.marketplace.dto.seller.SellerProductResponse;
 import com.sample.marketplace.dto.seller.SellerProfileResponse;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1/seller")
@@ -58,6 +61,14 @@ public class SellerController {
             @Valid @RequestBody CreateProductRequest request
     ) {
         return sellerCatalogService.createProduct(authenticatedUser, request);
+    }
+
+    @PostMapping("/products/image")
+    public ProductImageUploadResponse uploadProductImage(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @RequestParam("image") MultipartFile image
+    ) {
+        return sellerCatalogService.uploadProductImage(authenticatedUser, image);
     }
 
     @GetMapping("/products")

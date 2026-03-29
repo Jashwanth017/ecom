@@ -1,6 +1,7 @@
 package com.sample.marketplace.services;
 
 import com.sample.marketplace.dto.seller.CreateProductRequest;
+import com.sample.marketplace.dto.seller.ProductImageUploadResponse;
 import com.sample.marketplace.dto.seller.SellerDashboardSummaryResponse;
 import com.sample.marketplace.dto.seller.SellerProductResponse;
 import com.sample.marketplace.dto.seller.SellerProfileResponse;
@@ -23,6 +24,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -32,17 +34,20 @@ public class SellerCatalogService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
+    private final CloudinaryImageService cloudinaryImageService;
 
     public SellerCatalogService(
             SellerProfileRepository sellerProfileRepository,
             CategoryRepository categoryRepository,
             ProductRepository productRepository,
-            OrderItemRepository orderItemRepository
+            OrderItemRepository orderItemRepository,
+            CloudinaryImageService cloudinaryImageService
     ) {
         this.sellerProfileRepository = sellerProfileRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.orderItemRepository = orderItemRepository;
+        this.cloudinaryImageService = cloudinaryImageService;
     }
 
     @Transactional(readOnly = true)
@@ -92,6 +97,14 @@ public class SellerCatalogService {
                 normalizeOptional(request.imageUrl())
         );
         return toSellerProductResponse(productRepository.save(product));
+    }
+
+    public ProductImageUploadResponse uploadProductImage(
+            AuthenticatedUser authenticatedUser,
+            MultipartFile image
+    ) {
+        getSellerProfileEntity(authenticatedUser);
+        return new ProductImageUploadResponse(cloudinaryImageService.uploadProductImage(image));
     }
 
     @Transactional(readOnly = true)

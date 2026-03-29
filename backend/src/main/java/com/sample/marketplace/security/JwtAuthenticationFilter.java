@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -52,6 +53,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = jwtTokenService.extractEmail(token);
         Role role = jwtTokenService.extractRole(token);
         AuthenticatedUser authenticatedUser = marketplaceUserDetailsService.loadUserByEmailAndRole(email, role);
+
+        if (!authenticatedUser.isEnabled() || !authenticatedUser.isAccountNonLocked()) {
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType("application/json");
+            response.getWriter().write("""
+                    {"message":"Account is not allowed to access this resource"}
+                    """.trim());
+            return;
+        }
 
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(
